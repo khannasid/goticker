@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GoTicker Pro Dashboard</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px;
+            margin: 0;
+        }
+
+        h1 { margin-bottom: 30px; letter-spacing: 1px; }
+
+        /* The Grid Container */
+        #dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        /* The Crypto Card */
+        .card {
+            background-color: #1e1e1e;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            border: 1px solid #333;
+            transition: transform 0.2s;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+        }
+
+        .symbol {
+            font-size: 24px;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .price-container {
+            font-size: 36px;
+            font-weight: 600;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            transition: color 0.3s;
+        }
+
+        .exchange-tag {
+            font-size: 12px;
+            color: #888;
+            margin-top: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* Animations for Price Updates */
+        .flash-green { color: #00ff88 !important; }
+        .flash-red { color: #ff4d4d !important; }
+
+        .status {
+            font-size: 12px;
+            color: #666;
+            margin-top: 50px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🚀 GoTicker Live Market</h1>
+    
+    <div id="dashboard">
+        </div>
+
+    <div class="status" id="connection-status">Connecting to WebSocket...</div>
+
+    <script>
+        const dashboard = document.getElementById('dashboard');
+        const statusDiv = document.getElementById('connection-status');
+        
+        // Store previous prices to calculate direction (Up/Down)
+        const priceHistory = {};
+
+        // Connect to WebSocket
+        const socket = new WebSocket("ws://localhost:8080/ws");
+
+        socket.onopen = () => {
+            statusDiv.innerText = "● Live Connection Established";
+            statusDiv.style.color = "#00ff88";
+        };
+
+        socket.onclose = () => {
+            statusDiv.innerText = "● Connection Lost";
+            statusDiv.style.color = "#ff4d4d";
+        };
+
+        socket.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            updateCard(data);
+        };
+
+        function updateCard(data) {
+            const cardId = `card-${data.symbol}`;
+            let card = document.getElementById(cardId);
+
+            // 1. If card doesn't exist, create it
+            if (!card) {
+                card = document.createElement('div');
+                card.id = cardId;
+                card.className = 'card';
+                card.innerHTML = `
+                    <div class="card-header">
+                        <span class="symbol">${data.symbol}</span>
+                        <span style="font-size:12px; color:#aaa">USD</span>
+                    </div>
+                    <div class="price-container" id="price-${data.symbol}">
+                        $${data.price.toFixed(2)}
+                    </div>
+                    <div class="exchange-tag">
+                        <span>Latest Tick:</span>
+                        <span id="source-${data.symbol}">${data.exchange}</span>
+                    </div>
+                `;
+                dashboard.appendChild(card);
+                
+                // Initialize history
+                priceHistory[data.symbol] = data.price;
+            }
+
+            // 2. Update the Price Text
+            const priceElem = document.getElementById(`price-${data.symbol}`);
+            const sourceElem = document.getElementById(`source-${data.symbol}`);
+            
+            priceElem.innerText = `$${data.price.toFixed(2)}`;
+            sourceElem.innerText = data.exchange;
+
+            // 3. Fintech Flash Effect (Green/Red)
+            const prevPrice = priceHistory[data.symbol];
+            
+            // Remove old animation classes to restart animation
+            priceElem.classList.remove('flash-green', 'flash-red');
+            
+            // Force reflow (browser trick to restart CSS animation)
+            void priceElem.offsetWidth;
+
+            if (data.price > prevPrice) {
+                priceElem.classList.add('flash-green');
+            } else if (data.price < prevPrice) {
+                priceElem.classList.add('flash-red');
+            }
+
+            // Update history for next time
+            priceHistory[data.symbol] = data.price;
+        }
+    </script>
+</body>
+</html>

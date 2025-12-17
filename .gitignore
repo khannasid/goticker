@@ -1,0 +1,17 @@
+# Binaries
+/goticker
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Mac System Files
+.DS_Store
+
+# IDE Files
+.idea/
+.vscode/
+
+# Vendor (if you ever vendor dependencies)
+vendor/
