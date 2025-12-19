@@ -95,8 +95,19 @@
         // Store previous prices to calculate direction (Up/Down)
         const priceHistory = {};
 
+        // 1. Determine correct protocol (ws for HTTP, wss for HTTPS)
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        
+        // 2. Determine correct host (localhost:8080 or your-app.onrender.com)
+        const host = window.location.host;
+        
+        // 3. Construct the dynamic URL
+        const wsUrl = `${protocol}//${host}/ws`;
+        
+        console.log("Connecting to:", wsUrl); // Debug log
+
         // Connect to WebSocket
-        const socket = new WebSocket("ws://localhost:8080/ws");
+        const socket = new WebSocket(wsUrl);
 
         socket.onopen = () => {
             statusDiv.innerText = "● Live Connection Established";
