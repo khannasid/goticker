@@ -42,6 +42,10 @@ func main() {
 	http.HandleFunc("/price", apiServer.GetPriceHandler)
 	http.HandleFunc("/ws", apiServer.HandleWebSocket)
 
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+        http.ServeFile(w, r, "index.html")
+    })
+
 	go func() {
 		port := os.Getenv("PORT")
 		if port == "" {
